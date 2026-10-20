@@ -34,6 +34,18 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+def _by_label(widgets, label):
+    """Find a widget index by label.
+
+    AppTest orders widgets by their position in the DOM, where the sidebar
+    comes after the main area - so the sign-in button is not at index 0.
+    """
+    for index, widget in enumerate(widgets):
+        if widget.label == label:
+            return index
+    raise AssertionError(f"no widget labelled {label!r}")
+
+
 @pytest.fixture(scope="module")
 def signed_in():
     """An AppTest instance that has completed the sign-in form."""
@@ -41,9 +53,9 @@ def signed_in():
 
     app = AppTest.from_file(str(APP_PATH), default_timeout=60)
     app.run()
-    app.text_input[0].set_value(ADMIN_PHONE)
-    app.text_input[1].set_value(ADMIN_PASSWORD)
-    app.button[0].click().run()
+    app.text_input[_by_label(app.text_input, "Phone")].set_value(ADMIN_PHONE)
+    app.text_input[_by_label(app.text_input, "Password")].set_value(ADMIN_PASSWORD)
+    app.button[_by_label(app.button, "Sign in")].click().run()
     return app
 
 

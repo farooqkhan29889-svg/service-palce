@@ -5,7 +5,7 @@ FastAPI (Render); this console is a read-mostly admin view on top of it.
 """
 import streamlit as st
 
-from utils.api import ApiError, api_base_url, login, secret
+from dashboard_utils.api import ApiError, api_base_url, login, secret
 
 st.set_page_config(
     page_title="ServeNow console",

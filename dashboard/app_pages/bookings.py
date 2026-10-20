@@ -2,7 +2,7 @@
 import pandas as pd
 import streamlit as st
 
-from utils.api import ApiError, fetch_bookings
+from dashboard_utils.api import ApiError, fetch_bookings
 
 token = st.session_state.token
 

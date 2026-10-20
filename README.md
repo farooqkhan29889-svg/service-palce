@@ -233,20 +233,25 @@ current UTC time as a naive datetime and preserves that exact behaviour.
 - **Total customer pays**: Rs. 509
 - **Provider earns**: Rs. 450
 
-## Operations console
+## Front ends
 
-A Streamlit admin console lives in `dashboard/`. It reads the platform through
-the same public REST API that the mobile clients use, and covers bookings,
-provider approvals, the service catalog and revenue reporting.
+Two Streamlit apps sit on top of the API, each deployed separately:
+
+| App | Folder | Audience | Local URL |
+|---|---|---|---|
+| Customer app | `customer_app/` | Public landing page, booking flow | http://localhost:8502 |
+| Operations console | `dashboard/` | Admin: KPIs, bookings, approvals, revenue | http://localhost:8501 |
 
 ```bash
-.venv\Scripts\python -m streamlit run dashboard/streamlit_app.py
+.venv\Scripts\python -m streamlit run customer_app/streamlit_app.py   # customer
+.venv\Scripts\python -m streamlit run dashboard/streamlit_app.py      # admin
 ```
 
-See [dashboard/README.md](dashboard/README.md) for the page layout and the
-Streamlit Cloud deployment steps. The console is a separate deployable - the
-API stays on FastAPI (Render) because Streamlit Cloud cannot serve FastAPI or
-hold WebSocket connections.
+See [customer_app/README.md](customer_app/README.md) and
+[dashboard/README.md](dashboard/README.md) for the page layout and the
+Streamlit Cloud deployment steps. Both read the platform through the public
+REST API - the API stays on FastAPI (Render) because Streamlit Cloud cannot
+serve FastAPI or hold WebSocket connections.
 
 ## Deployment
 

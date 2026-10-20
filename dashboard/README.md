@@ -27,7 +27,7 @@ dashboard/
 │   ├── bookings.py
 │   ├── providers.py
 │   └── services.py
-├── utils/
+├── dashboard_utils/
 │   └── api.py            # HTTP client and cached endpoint helpers
 ├── tests/
 │   └── test_console.py   # Headless checks via st.testing.v1.AppTest
