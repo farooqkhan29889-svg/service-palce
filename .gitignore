@@ -3,6 +3,10 @@
 .env.local
 atlas-credentials.env
 
+# Streamlit
+.streamlit/secrets.toml
+.dashboard/secrets.toml
+
 # Python
 __pycache__/
 *.py[cod]

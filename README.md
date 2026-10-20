@@ -233,6 +233,21 @@ current UTC time as a naive datetime and preserves that exact behaviour.
 - **Total customer pays**: Rs. 509
 - **Provider earns**: Rs. 450
 
+## Operations console
+
+A Streamlit admin console lives in `dashboard/`. It reads the platform through
+the same public REST API that the mobile clients use, and covers bookings,
+provider approvals, the service catalog and revenue reporting.
+
+```bash
+.venv\Scripts\python -m streamlit run dashboard/streamlit_app.py
+```
+
+See [dashboard/README.md](dashboard/README.md) for the page layout and the
+Streamlit Cloud deployment steps. The console is a separate deployable - the
+API stays on FastAPI (Render) because Streamlit Cloud cannot serve FastAPI or
+hold WebSocket connections.
+
 ## Deployment
 
 ### Render (one-click blueprint)
