@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: servenow-api
+    runtime: python
+    plan: free
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    # --workers 1 is deliberate: the WebSocket connection registry lives in
+    # process memory (app/websocket/handler.py), so a second worker would not
+    # see connections opened on the first. Scale out via Redis pub/sub on
+    # REDIS_URL before raising the worker count.
+    startCommand: gunicorn main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.4
+      - key: MONGODB_URI
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_NAME
+        value: servenow
+      - key: DEBUG
+        value: "false"
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "10080"
+      - key: CORS_ORIGINS
+        value: '["http://localhost:3000","https://your-frontend-domain.com"]'
+      - key: PLATFORM_COMMISSION_RATE
+        value: "0.10"
+      - key: GST_RATE
+        value: "0.18"
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: REDIS_URL
+        sync: false

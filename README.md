@@ -233,17 +233,96 @@ current UTC time as a naive datetime and preserves that exact behaviour.
 - **Total customer pays**: Rs. 509
 - **Provider earns**: Rs. 450
 
-## Production Deployment
+## Deployment
 
-1. Update `.env` with production values (Atlas cluster, real Razorpay keys)
-2. Set `DEBUG=False`
-3. Use a production server:
-   ```bash
-   gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-   ```
-4. Configure Razorpay production keys (the API falls back to demo mode when they are blank)
-5. Set up Firebase for push notifications
-6. Use a reverse proxy (nginx) and SSL
+### Render (one-click blueprint)
+
+`render.yaml` in the repo root defines the whole service, so Render can build
+and deploy it without any manual configuration beyond the secrets.
+
+1. Push the code to GitHub (done - the repo is the deployment source).
+2. Open the Render dashboard and choose **New -> Blueprint**.
+3. Connect the repository `farooqkhan29889-svg/service-palce`.
+4. Render reads `render.yaml` and asks for the values marked `sync: false`:
+   - `MONGODB_URI` - the MongoDB Atlas connection string
+   - `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` - leave blank for demo mode
+   - `REDIS_URL` - optional, only needed once WebSockets scale past one worker
+5. `SECRET_KEY` is generated automatically by Render.
+6. Click **Apply**. The first build takes 2-4 minutes.
+
+Once deployed the service is reachable at:
+
+```
+https://servenow-api.onrender.com
+https://servenow-api.onrender.com/docs
+https://servenow-api.onrender.com/health
+wss://servenow-api.onrender.com/ws?token=<jwt>
+```
+
+### MongoDB Atlas access list
+
+Render's outbound IP addresses are not fixed, so the Atlas project must allow
+them. In the Atlas UI go to **Network Access -> Access List** and add:
+
+```
+0.0.0.0/0    (Allow access from anywhere)
+```
+
+Without this entry the container cannot open the database connection and the
+service will fail its health check. Replace it with Render's published static
+IP ranges once you move to a paid plan.
+
+### Environment variables
+
+| Variable | Required | Notes |
+|---|---|---|
+| `MONGODB_URI` | yes | `mongodb+srv://user:password@cluster.mongodb.net` |
+| `SECRET_KEY` | yes | Render generates one; rotate it if it ever leaks |
+| `DATABASE_NAME` | yes | `servenow` |
+| `DEBUG` | yes | Set to `false` in production |
+| `CORS_ORIGINS` | yes | JSON list of allowed frontend origins |
+| `ALGORITHM` | no | `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | no | `10080` (7 days) |
+| `PLATFORM_COMMISSION_RATE` | no | `0.10` |
+| `GST_RATE` | no | `0.18` |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | no | Blank switches payments to demo mode |
+| `REDIS_URL` | no | Reserved for cross-worker WebSocket fan-out |
+
+### Connecting the frontend
+
+- REST base URL: `https://servenow-api.onrender.com`
+- WebSocket URL: `wss://servenow-api.onrender.com/ws?token=<jwt>`
+- Add the frontend origin to `CORS_ORIGINS`, otherwise the browser blocks
+  every call.
+
+### Scaling notes
+
+The WebSocket connection registry lives in process memory
+(`app/websocket/handler.py`), so the service deliberately runs with
+**one worker**. A second gunicorn worker would not see connections opened on
+the first, and live location and chat updates would be silently dropped.
+
+To scale out, move the broadcast fan-out to Redis pub/sub (the `REDIS_URL`
+variable is already reserved for that) and then raise `--workers`.
+
+### Free tier caveats
+
+Render's free plan spins the service down after 15 minutes of inactivity and
+restarts it on the next request, which drops any open WebSocket. The client
+must reconnect on close. Move to the `starter` plan for a production API with
+live tracking.
+
+### Other platforms
+
+`Procfile` is included and works on Railway, Heroku and any other platform
+that reads it:
+
+```
+web: gunicorn main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+```
+
+For Docker or a plain VPS, build with `pip install -r requirements.txt` and run
+that command behind nginx with TLS termination.
 
 ## License
 
