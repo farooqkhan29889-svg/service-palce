@@ -1,0 +1,26 @@
+# Normalize line endings: store LF in the repo, keep native endings on checkout
+* text=auto eol=lf
+
+# Python
+*.py text eol=lf
+
+# Docs and config
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+.env.example text eol=lf
+.gitignore text eol=lf
+
+# Windows scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
