@@ -70,7 +70,11 @@ def signed_in():
 
 def test_landing_page_works_without_login(guest):
     assert not guest.exception
-    assert guest.title, "landing page has no title"
+    # The hero is a gradient banner rendered with st.html, so the landing
+    # page has no st.title. Its calls to action are the real signal.
+    labels = [button.label for button in guest.button]
+    assert "Browse services" in labels, labels
+    assert "Find a provider" in labels, labels
 
 
 def test_sign_in_succeeds(signed_in):

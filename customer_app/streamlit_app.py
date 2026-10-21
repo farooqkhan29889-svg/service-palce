@@ -6,6 +6,7 @@ of the ServeNow API without an account, and needs a customer login to book.
 import streamlit as st
 
 from customer_utils.api import ApiError, api_base_url, login, register
+from customer_utils.ui import LOGO_SVG
 
 st.set_page_config(
     page_title="ServeNow - local services at your doorstep",
@@ -13,6 +14,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+st.logo(LOGO_SVG)
 
 if "token" not in st.session_state:
     st.session_state.token = None
@@ -49,7 +52,6 @@ def sign_up(name, phone, email, password):
 with st.sidebar:
     st.markdown("### ServeNow")
     st.caption("Trusted local experts, booked in minutes.")
-
     if st.session_state.token:
         user = st.session_state.user or {}
         st.success(f"Signed in as {user.get('name', 'customer')}")

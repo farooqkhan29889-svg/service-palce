@@ -12,6 +12,7 @@ from customer_utils.api import (
     fetch_services,
     price_preview,
 )
+from customer_utils.ui import inr, service_icon
 
 token = st.session_state.token
 
@@ -27,13 +28,21 @@ if "booking_service" not in st.session_state:
 if "booking_result" not in st.session_state:
     st.session_state.booking_result = None
 
+st.header("Services", icon=":material/handyman:")
+st.caption("Every price below is the full price - service charge, platform fee and GST included.")
+
 filter_col, category_col = st.columns([2, 1])
 
 with filter_col:
     search = st.text_input("Search services", placeholder="Search by name", label_visibility="collapsed")
 with category_col:
+    options = ["All"] + list(categories)
+    default_category = st.session_state.pop("service_category", "All")
     chosen_category = st.selectbox(
-        "Category", ["All"] + list(categories), label_visibility="collapsed"
+        "Category",
+        options,
+        index=options.index(default_category) if default_category in options else 0,
+        label_visibility="collapsed",
     )
 
 visible = [
@@ -53,11 +62,12 @@ grid = st.columns(3)
 for index, service in enumerate(visible):
     with grid[index % 3]:
         with st.container(border=True):
-            st.markdown(f"### {service.get('icon', '🛠️')} {service.get('name')}")
+            st.markdown(f"#### :material/{service_icon(service)}: {service.get('name')}")
             st.caption(service.get("description", ""))
+            st.caption(f":material/location_on: {service.get('category', 'General')}")
             price_col, duration_col = st.columns(2)
             with price_col:
-                st.metric("From", f"₹{service.get('base_price', 0):,.0f}")
+                st.metric("From", inr(service.get("base_price", 0)))
             with duration_col:
                 st.metric("Duration", f"{service.get('duration', 0)} min")
             if st.button(
@@ -78,8 +88,8 @@ if service is None:
     st.session_state.booking_service = None
     st.stop()
 
-st.divider()
-st.subheader(f"Book {service.get('name')}")
+st.space("medium")
+st.header(f"Book {service.get('name')}", icon=":material/calendar_month:")
 
 if not st.session_state.token:
     st.warning("Sign in from the sidebar to request this booking.")
@@ -119,9 +129,9 @@ with st.form("booking_form"):
     preview_col, submit_col = st.columns([2, 1], vertical_alignment="center")
     with preview_col:
         st.caption(
-            f"Service ₹{preview['service_charge']:,.0f} · "
-            f"GST ₹{preview['gst']:,.0f} · "
-            f"Total ₹{preview['total_amount']:,.0f}"
+            f":material/receipt_long: Service {inr(preview['service_charge'])} · "
+            f"GST {inr(preview['gst'])} · "
+            f"Total {inr(preview['total_amount'])}"
         )
     with submit_col:
         submitted = st.form_submit_button(

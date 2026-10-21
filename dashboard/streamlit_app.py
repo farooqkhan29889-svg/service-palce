@@ -6,6 +6,7 @@ FastAPI (Render); this console is a read-mostly admin view on top of it.
 import streamlit as st
 
 from dashboard_utils.api import ApiError, api_base_url, login, secret
+from dashboard_utils.branding import LOGO_SVG
 
 st.set_page_config(
     page_title="ServeNow console",
@@ -13,6 +14,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+st.logo(LOGO_SVG)
 
 if "token" not in st.session_state:
     st.session_state.token = None

@@ -8,11 +8,15 @@ from customer_utils.api import (
     fetch_reviews,
     fetch_services,
 )
+from customer_utils.ui import inr, stars
 
 token = st.session_state.token
 
 if "provider_profile" not in st.session_state:
     st.session_state.provider_profile = None
+
+st.header("Find a provider", icon=":material/storefront:")
+st.caption("Search by location and compare the professionals available right now.")
 
 lat_col, lng_col, radius_col = st.columns([1, 1, 1])
 with lat_col:
@@ -42,13 +46,14 @@ for provider in providers:
     with st.container(border=True):
         head, action = st.columns([3, 1], vertical_alignment="center")
         with head:
-            st.markdown(f"### {provider.get('user_name', 'Provider')}")
+            st.markdown(f"#### :material/account_circle: {provider.get('user_name', 'Provider')}")
             st.caption(
-                f"⭐ {rating.get('average', 0)} from {rating.get('count', 0)} reviews · "
-                f"{provider.get('total_jobs', 0)} jobs · "
-                f"{provider.get('experience_years', 0)} years experience · "
-                f"₹{provider.get('daily_wage', 0):,.0f}/day"
+                f"{stars(rating.get('average', 0))} {rating.get('average', 0)} "
+                f"from {rating.get('count', 0)} reviews · "
+                f"{provider.get('total_jobs', 0)} jobs done · "
+                f"{provider.get('experience_years', 0)} years experience"
             )
+            st.caption(f":material/payments: From {inr(provider.get('daily_wage', 0))} per day")
             if skills:
                 st.caption("Skills: " + ", ".join(skills))
         with action:
@@ -60,7 +65,7 @@ for provider in providers:
             ):
                 st.session_state.provider_profile = provider_id
 
-        with st.expander("Reviews"):
+        with st.expander("Reviews", icon=":material/reviews:"):
             try:
                 reviews = fetch_reviews(provider_id, token)["data"]
             except ApiError as exc:
@@ -70,8 +75,7 @@ for provider in providers:
                     st.caption("No reviews yet for this provider.")
                 for review in reviews:
                     st.markdown(
-                        f"**{'⭐' * int(review.get('rating', 0))}** "
-                        f"{review.get('review', '')}"
+                        f"**{stars(review.get('rating', 0))}** {review.get('review', '')}"
                     )
                     st.caption(str(review.get("created_at", ""))[:10])
 
@@ -100,7 +104,7 @@ if profile_id:
         st.error(str(exc))
     else:
         with st.container(border=True):
-            st.subheader(f"Profile: {profile.get('user_name', 'Provider')}")
+            st.subheader(f"{profile.get('user_name', 'Provider')}", icon=":material/account_circle:")
             detail_col, contact_col = st.columns(2)
             with detail_col:
                 st.markdown("**Experience**")
@@ -108,12 +112,13 @@ if profile_id:
                 st.markdown("**Completed jobs**")
                 st.write(profile.get("completed_jobs", 0))
                 st.markdown("**Earnings to date**")
-                st.write(f"₹{(profile.get('earnings', {}) or {}).get('total', 0):,.0f}")
+                st.write(inr((profile.get("earnings", {}) or {}).get("total", 0)))
             with contact_col:
                 st.markdown("**Contact**")
                 st.write(profile.get("user_phone", ""))
                 st.markdown("**Rating**")
-                st.write((profile.get("rating", {}) or {}).get("average", 0))
+                st.write(f"{stars((profile.get('rating', {}) or {}).get('average', 0))} "
+                         f"{(profile.get('rating', {}) or {}).get('average', 0)}")
         if st.button("Close profile", icon=":material/close:"):
             st.session_state.provider_profile = None
             st.rerun()

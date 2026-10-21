@@ -8,12 +8,16 @@ from customer_utils.api import (
     create_review,
     fetch_my_bookings,
 )
+from customer_utils.ui import inr, stars
 
 token = st.session_state.token
 
 if not token:
     st.info("Sign in from the sidebar to see your bookings.")
     st.stop()
+
+st.header("My bookings", icon=":material/receipt_long:")
+st.caption("Track every job you have booked and pay only when it is done.")
 
 try:
     bookings = fetch_my_bookings(token)["data"]
@@ -27,6 +31,14 @@ if not bookings:
     st.info("You have no bookings yet.")
     st.stop()
 
+STATUS_COLORS = {
+    "pending": "orange",
+    "confirmed": "blue",
+    "in_progress": "violet",
+    "completed": "green",
+    "cancelled": "gray",
+}
+
 for booking in bookings:
     # The API resolves bookings by their MongoDB id, not the SN-xxxx reference.
     mongo_id = booking.get("_id")
@@ -38,20 +50,23 @@ for booking in bookings:
     with st.container(border=True):
         head, status_col = st.columns([3, 1], vertical_alignment="center")
         with head:
-            st.markdown(f"### {booking.get('service_name', 'Service')}")
+            st.markdown(f"#### {booking.get('service_name', 'Service')}")
             st.caption(
                 f"Reference {booking.get('booking_id')} · "
                 f"{str(booking.get('service_date', ''))[:16]} · "
                 f"{booking.get('service_time', '')}"
             )
-            st.caption(f"{booking.get('address')}, {booking.get('city')}")
+            st.caption(f":material/location_on: {booking.get('address')}, {booking.get('city')}")
         with status_col:
-            st.badge(status.replace("_", " ").title())
+            st.badge(
+                status.replace("_", " ").title(),
+                color=STATUS_COLORS.get(status, "gray"),
+            )
 
         price_col, created_col = st.columns(2)
         with price_col:
             st.markdown("**Total paid**")
-            st.write(f"₹{pricing.get('total_amount', 0):,.0f}")
+            st.write(inr(pricing.get("total_amount", 0)))
         with created_col:
             st.markdown("**Booked on**")
             st.write(str(timeline.get("created_at", ""))[:16])

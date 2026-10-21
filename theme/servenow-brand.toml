@@ -1,0 +1,116 @@
+# ServeNow brand theme.
+#
+# Shared by every Streamlit app in this repository. Each app points at this
+# file through `theme.base` in .streamlit/config.toml, so a colour or font
+# change here reaches the customer app and the admin console together.
+#
+# The path is resolved from the directory Streamlit runs in, which is the
+# repository root both locally and on Streamlit Cloud.
+
+[theme]
+base = "light"
+font = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "'Plus Jakarta Sans':https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 15
+baseFontWeight = 400
+codeFontSize = "13px"
+headingFontSizes = ["2.75rem", "2rem", "1.5rem", "1.25rem", "1.0625rem", "0.875rem"]
+headingFontWeights = [800, 700, 700, 600, 600, 500]
+metricValueFontSize = "1.85rem"
+metricValueFontWeight = 700
+baseRadius = "0.75rem"
+buttonRadius = "0.6rem"
+showWidgetBorder = true
+showSidebarBorder = true
+linkUnderline = false
+paddingTop = "1rem"
+paddingBottom = "3rem"
+
+chartCategoricalColors = [
+    "#4F46E5",
+    "#0EA5E9",
+    "#F59E0B",
+    "#10B981",
+    "#EC4899",
+    "#8B5CF6",
+    "#EF4444",
+    "#64748B",
+]
+chartSequentialColors = [
+    "#EEF2FF",
+    "#E0E7FF",
+    "#C7D2FE",
+    "#A5B4FC",
+    "#818CF8",
+    "#6366F1",
+    "#4F46E5",
+    "#4338CA",
+    "#3730A3",
+    "#312E81",
+]
+
+[theme.light]
+primaryColor = "#4F46E5"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8FAFC"
+textColor = "#0F172A"
+borderColor = "#E2E8F0"
+linkColor = "#4F46E5"
+codeBackgroundColor = "#F1F5F9"
+codeTextColor = "#334155"
+greenColor = "#059669"
+redColor = "#E11D48"
+yellowColor = "#D97706"
+orangeColor = "#EA580C"
+blueColor = "#2563EB"
+violetColor = "#7C3AED"
+grayColor = "#64748B"
+dataframeBorderColor = "#E2E8F0"
+dataframeHeaderBackgroundColor = "#F1F5F9"
+dataframeHeaderTextColor = "#0F172A"
+
+[theme.dark]
+primaryColor = "#818CF8"
+backgroundColor = "#0B1120"
+secondaryBackgroundColor = "#151E31"
+textColor = "#E2E8F0"
+borderColor = "#1E293B"
+linkColor = "#A5B4FC"
+codeBackgroundColor = "#151E31"
+codeTextColor = "#CBD5E1"
+greenColor = "#34D399"
+redColor = "#FB7185"
+yellowColor = "#FBBF24"
+orangeColor = "#FB923C"
+blueColor = "#60A5FA"
+violetColor = "#A78BFA"
+grayColor = "#94A3B8"
+dataframeBorderColor = "#1E293B"
+dataframeHeaderBackgroundColor = "#1E293B"
+dataframeHeaderTextColor = "#F8FAFC"
+
+# A deep navy sidebar against the light canvas reads as a premium console.
+[theme.light.sidebar]
+backgroundColor = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+codeBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"
+borderColor = "#334155"
+primaryColor = "#818CF8"
+linkColor = "#A5B4FC"
+codeTextColor = "#CBD5E1"
+
+[theme.dark.sidebar]
+backgroundColor = "#020617"
+secondaryBackgroundColor = "#0B1120"
+codeBackgroundColor = "#0B1120"
+textColor = "#E2E8F0"
+borderColor = "#1E293B"
+primaryColor = "#818CF8"
+linkColor = "#A5B4FC"
+codeTextColor = "#CBD5E1"
+
+[theme.sidebar]
+paddingTop = "1rem"
+paddingBottom = "1.5rem"
