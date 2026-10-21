@@ -12,13 +12,16 @@ from customer_utils.ui import (
 
 token = st.session_state.token
 
+services, categories, nearby = [], [], []
+api_error = None
 try:
     services = fetch_services(token)["data"]
     categories = fetch_categories(token)["data"]
     nearby = fetch_providers(token, radius=25)["data"]
 except ApiError as exc:
-    st.error(str(exc))
-    st.stop()
+    # The landing page should still render if the API is unreachable, so the
+    # customer sees the service rather than a wall of error text.
+    api_error = str(exc)
 
 st.html(
     hero_banner(
@@ -29,6 +32,13 @@ st.html(
         "that gets done right.",
     )
 )
+
+if api_error:
+    st.warning(
+        "We could not load live listings just now. The services below will "
+        "appear as soon as the platform is reachable.",
+        icon=":material/cloud_off:",
+    )
 
 st.space("small")
 
@@ -61,61 +71,69 @@ st.space("medium")
 
 with st.container(border=True):
     with st.container(horizontal=True):
-        st.metric("Services on the platform", f"{len(services):,}", border=False)
-        st.metric("Service categories", f"{len(categories):,}", border=False)
-        st.metric("Professionals online now", f"{len(nearby):,}", border=False)
-        st.metric("Average rating", "4.8 ★", border=False)
+        if api_error:
+            st.metric("Services on the platform", "—", border=False)
+            st.metric("Service categories", "—", border=False)
+            st.metric("Professionals online now", "—", border=False)
+            st.metric("Average rating", "—", border=False)
+        else:
+            st.metric("Services on the platform", f"{len(services):,}", border=False)
+            st.metric("Service categories", f"{len(categories):,}", border=False)
+            st.metric("Professionals online now", f"{len(nearby):,}", border=False)
+            st.metric("Average rating", "4.8 ★", border=False)
 
 st.space("medium")
 
-st.header("Browse by category", icon=":material/grid_view:")
-st.caption("Pick a category and see what is available near you.")
+if categories:
+    st.header("Browse by category", icon=":material/grid_view:")
+    st.caption("Pick a category and see what is available near you.")
 
-category_columns = st.columns(4)
-for index, category in enumerate(categories):
-    with category_columns[index % 4]:
-        with st.container(border=True):
-            st.markdown(f"#### :material/{category_icon(category)}: {category}")
-            count = sum(1 for s in services if s.get("category") == category)
-            st.caption(f"{count} service{'s' if count != 1 else ''}")
-            if st.button(
-                "Explore",
-                key=f"home_category_{category}",
-                icon=":material/arrow_forward:",
-                width="stretch",
-            ):
-                st.session_state.service_category = category
-                st.switch_page("app_pages/services.py")
+    category_columns = st.columns(4)
+    for index, category in enumerate(categories):
+        with category_columns[index % 4]:
+            with st.container(border=True):
+                st.markdown(f"#### :material/{category_icon(category)}: {category}")
+                count = sum(1 for s in services if s.get("category") == category)
+                st.caption(f"{count} service{'s' if count != 1 else ''}")
+                if st.button(
+                    "Explore",
+                    key=f"home_category_{category}",
+                    icon=":material/arrow_forward:",
+                    width="stretch",
+                ):
+                    st.session_state.service_category = category
+                    st.switch_page("app_pages/services.py")
 
-st.space("medium")
+    st.space("medium")
 
-st.header("Popular services", icon=":material/local_fire_department:")
-st.caption("Transparent pricing before you book. No hidden charges.")
+if services:
+    st.header("Popular services", icon=":material/local_fire_department:")
+    st.caption("Transparent pricing before you book. No hidden charges.")
 
-featured = sorted(services, key=lambda s: s.get("base_price", 0))[:6]
-service_columns = st.columns(3)
+    featured = sorted(services, key=lambda s: s.get("base_price", 0))[:6]
+    service_columns = st.columns(3)
 
-for index, service in enumerate(featured):
-    with service_columns[index % 3]:
-        with st.container(border=True):
-            st.markdown(f"#### :material/{service_icon(service)}: {service.get('name')}")
-            st.caption(service.get("description", ""))
-            st.caption(f":material/location_on: {service.get('category', 'General')}")
+    for index, service in enumerate(featured):
+        with service_columns[index % 3]:
+            with st.container(border=True):
+                st.markdown(f"#### :material/{service_icon(service)}: {service.get('name')}")
+                st.caption(service.get("description", ""))
+                st.caption(f":material/location_on: {service.get('category', 'General')}")
 
-            price_col, duration_col = st.columns(2)
-            with price_col:
-                st.metric("Starting at", inr(service.get("base_price", 0)))
-            with duration_col:
-                st.metric("Typical time", f"{service.get('duration', 0)} min")
+                price_col, duration_col = st.columns(2)
+                with price_col:
+                    st.metric("Starting at", inr(service.get("base_price", 0)))
+                with duration_col:
+                    st.metric("Typical time", f"{service.get('duration', 0)} min")
 
-            if st.button(
-                "Book now",
-                key=f"home_book_{service.get('_id')}",
-                icon=":material/calendar_month:",
-                width="stretch",
-            ):
-                st.session_state.selected_service = service.get("_id")
-                st.switch_page("app_pages/services.py")
+                if st.button(
+                    "Book now",
+                    key=f"home_book_{service.get('_id')}",
+                    icon=":material/calendar_month:",
+                    width="stretch",
+                ):
+                    st.session_state.selected_service = service.get("_id")
+                    st.switch_page("app_pages/services.py")
 
 st.space("medium")
 
