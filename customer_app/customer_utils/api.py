@@ -68,6 +68,12 @@ def _request(method, path, token=None, payload=None, params=None):
     return response.json()
 
 
+def fetch_me(token):
+    """Return the signed-in user's profile, including ``is_verified``."""
+    payload = _request("GET", "/api/auth/me", token=token)
+    return payload.get("data", {}).get("user", {})
+
+
 def login(phone, password):
     """Sign in and return ``(token, user)``."""
     payload = _request("POST", "/api/auth/login", payload={"phone": phone, "password": password})
@@ -81,6 +87,20 @@ def register(name, phone, email, password):
     if email:
         body["email"] = email
     payload = _request("POST", "/api/auth/register", payload=body)
+    data = payload.get("data", {})
+    return data.get("token"), data.get("user", {})
+
+
+def send_otp(phone):
+    """Ask the API to generate an OTP for this phone number."""
+    _request("POST", "/api/auth/send-otp", params={"phone": phone})
+
+
+def verify_otp(phone, otp):
+    """Confirm the OTP and return the now-verified ``(token, user)``."""
+    payload = _request(
+        "POST", "/api/auth/verify-otp", params={"phone": phone, "otp": otp}
+    )
     data = payload.get("data", {})
     return data.get("token"), data.get("user", {})
 

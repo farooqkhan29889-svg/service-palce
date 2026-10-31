@@ -3,11 +3,14 @@ import streamlit as st
 
 from customer_utils.api import ApiError, fetch_categories, fetch_providers, fetch_services
 from customer_utils.ui import (
+    avatar_tile,
     category_icon,
+    chip_row,
     hero_banner,
+    icon_tile,
     inr,
     service_icon,
-    stars,
+    warranty_band,
 )
 
 token = st.session_state.token
@@ -42,7 +45,7 @@ if api_error:
 
 st.space("small")
 
-action_col, action_col2, action_col3 = st.columns([1.1, 1.1, 2])
+action_col, action_col2 = st.columns(2)
 
 with action_col:
     if st.button(
@@ -61,26 +64,34 @@ with action_col2:
     ):
         st.switch_page("app_pages/providers.py")
 
-with action_col3:
-    st.caption(
-        ":material/verified: Background-checked professionals  ·  "
-        ":material/payments: Pay only when the job is done"
+st.caption(
+    ":material/verified: Background-checked professionals  ·  "
+    ":material/payments: Pay only when the job is done"
+)
+
+st.space("medium")
+
+st.html(
+    warranty_band(
+        "Every job",
+        "Verified pros, 30-day warranty",
+        "Pay only after the work is done.",
     )
+)
 
 st.space("medium")
 
 with st.container(border=True):
     with st.container(horizontal=True):
-        if api_error:
-            st.metric("Services on the platform", "—", border=False)
-            st.metric("Service categories", "—", border=False)
-            st.metric("Professionals online now", "—", border=False)
-            st.metric("Average rating", "—", border=False)
-        else:
-            st.metric("Services on the platform", f"{len(services):,}", border=False)
-            st.metric("Service categories", f"{len(categories):,}", border=False)
-            st.metric("Professionals online now", f"{len(nearby):,}", border=False)
-            st.metric("Average rating", "4.8 ★", border=False)
+        stats = (
+            ("—", "—", "—", "—")
+            if api_error
+            else (f"{len(services):,}", f"{len(categories):,}", f"{len(nearby):,}", "4.8 ★")
+        )
+        st.metric("Services", stats[0], border=False)
+        st.metric("Categories", stats[1], border=False)
+        st.metric("Pros online", stats[2], border=False)
+        st.metric("Rating", stats[3], border=False)
 
 st.space("medium")
 
@@ -88,17 +99,17 @@ if categories:
     st.header("Browse by category", icon=":material/grid_view:")
     st.caption("Pick a category and see what is available near you.")
 
-    category_columns = st.columns(4)
+    category_columns = st.columns(2)
     for index, category in enumerate(categories):
-        with category_columns[index % 4]:
+        with category_columns[index % 2]:
             with st.container(border=True):
-                st.markdown(f"#### :material/{category_icon(category)}: {category}")
+                st.html(icon_tile(category_icon(category)))
+                st.markdown(f"**{category}**")
                 count = sum(1 for s in services if s.get("category") == category)
                 st.caption(f"{count} service{'s' if count != 1 else ''}")
                 if st.button(
                     "Explore",
                     key=f"home_category_{category}",
-                    icon=":material/arrow_forward:",
                     width="stretch",
                 ):
                     st.session_state.service_category = category
@@ -110,37 +121,44 @@ if services:
     st.header("Popular services", icon=":material/local_fire_department:")
     st.caption("Transparent pricing before you book. No hidden charges.")
 
-    featured = sorted(services, key=lambda s: s.get("base_price", 0))[:6]
-    service_columns = st.columns(3)
+    featured = sorted(services, key=lambda s: s.get("base_price", 0))[:4]
 
-    for index, service in enumerate(featured):
-        with service_columns[index % 3]:
-            with st.container(border=True):
-                st.markdown(f"#### :material/{service_icon(service)}: {service.get('name')}")
-                st.caption(service.get("description", ""))
-                st.caption(f":material/location_on: {service.get('category', 'General')}")
-
-                price_col, duration_col = st.columns(2)
-                with price_col:
-                    st.metric("Starting at", inr(service.get("base_price", 0)))
-                with duration_col:
-                    st.metric("Typical time", f"{service.get('duration', 0)} min")
-
-                if st.button(
-                    "Book now",
-                    key=f"home_book_{service.get('_id')}",
-                    icon=":material/calendar_month:",
-                    width="stretch",
-                ):
-                    st.session_state.selected_service = service.get("_id")
-                    st.switch_page("app_pages/services.py")
+    for service in featured:
+        with st.container(border=True):
+            icon_col, name_col, price_col = st.columns(
+                [0.5, 2.1, 0.95], vertical_alignment="center"
+            )
+            with icon_col:
+                st.html(icon_tile(service_icon(service), size=46))
+            with name_col:
+                st.markdown(f"**{service.get('name')}**")
+                st.caption(service.get("category", "General"))
+            with price_col:
+                st.markdown(f"**{inr(service.get('base_price', 0))}**")
+                st.caption("starting at")
+            st.caption(service.get("description", ""))
+            st.html(
+                chip_row(
+                    [
+                        f"⏱ {service.get('duration', 0)} min typical",
+                        "✓ Visit charge included",
+                    ]
+                )
+            )
+            if st.button(
+                "Book now",
+                key=f"home_book_{service.get('_id')}",
+                type="primary",
+                width="stretch",
+            ):
+                st.session_state.selected_service = service.get("_id")
+                st.switch_page("app_pages/services.py")
 
 st.space("medium")
 
 st.header("How it works", icon=":material/auto_awesome:")
 st.caption("Three steps, no phone tag.")
 
-step_columns = st.columns(3)
 steps = [
     (
         "search",
@@ -162,10 +180,12 @@ steps = [
     ),
 ]
 
-for column, (icon, heading, body) in zip(step_columns, steps):
-    with column:
-        with st.container(border=True):
-            st.markdown(f"#### :material/{icon}:")
+for icon, heading, body in steps:
+    with st.container(border=True):
+        step_icon, step_text = st.columns([0.42, 2.6], vertical_alignment="center")
+        with step_icon:
+            st.html(icon_tile(icon, size=44))
+        with step_text:
             st.markdown(f"**{heading}**")
             st.caption(body)
 
@@ -175,20 +195,24 @@ if nearby:
     st.header("Professionals near you", icon=":material/groups:")
     st.caption("Online right now and available to take jobs today.")
 
-    provider_columns = st.columns(4)
-    for index, provider in enumerate(nearby[:4]):
-        with provider_columns[index % 4]:
-            with st.container(border=True):
-                rating = provider.get("rating", {}) or {}
-                st.markdown(f"#### :material/account_circle: {provider.get('user_name', 'Provider')}")
-                st.caption(
-                    f"{stars(rating.get('average', 0))} "
-                    f"{rating.get('average', 0)} "
-                    f"({rating.get('count', 0)} reviews)"
+    for provider in nearby[:4]:
+        with st.container(border=True):
+            provider_avatar, provider_info = st.columns(
+                [0.42, 2.6], vertical_alignment="center"
+            )
+            name = provider.get("user_name", "Provider")
+            rating = provider.get("rating", {}) or {}
+            with provider_avatar:
+                st.html(avatar_tile(name, size=44))
+            with provider_info:
+                st.markdown(f"**{name}**")
+                st.html(
+                    chip_row(
+                        [
+                            f"★ {rating.get('average', 0)} ({rating.get('count', 0)})",
+                            f"✓ {provider.get('total_jobs', 0)} jobs",
+                            f"🛠 {provider.get('experience_years', 0)} yrs",
+                        ]
+                    )
                 )
-                stat_col, job_col = st.columns(2)
-                with stat_col:
-                    st.metric("Jobs done", f"{provider.get('total_jobs', 0):,}")
-                with job_col:
-                    st.metric("Experience", f"{provider.get('experience_years', 0)} yrs")
                 st.caption(f"From {inr(provider.get('daily_wage', 0))} per day")

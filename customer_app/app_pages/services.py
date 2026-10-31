@@ -1,5 +1,5 @@
 """Browse the service catalog and request a booking."""
-from datetime import date
+from datetime import date, timedelta
 
 import streamlit as st
 
@@ -12,7 +12,7 @@ from customer_utils.api import (
     fetch_services,
     price_preview,
 )
-from customer_utils.ui import inr, service_icon
+from customer_utils.ui import choice_row, icon_tile, inr, service_icon
 
 token = st.session_state.token
 
@@ -58,26 +58,39 @@ if not visible:
     st.info("No services match that search.")
     st.stop()
 
-grid = st.columns(3)
-for index, service in enumerate(visible):
-    with grid[index % 3]:
-        with st.container(border=True):
-            st.markdown(f"#### :material/{service_icon(service)}: {service.get('name')}")
-            st.caption(service.get("description", ""))
+for service in visible:
+    with st.container(border=True):
+        icon_col, text_col, price_col = st.columns(
+            [0.5, 2.1, 0.95], vertical_alignment="center"
+        )
+        with icon_col:
+            st.html(icon_tile(service_icon(service), size=46))
+        with text_col:
+            st.markdown(f"**{service.get('name')}**")
             st.caption(f":material/location_on: {service.get('category', 'General')}")
-            price_col, duration_col = st.columns(2)
-            with price_col:
-                st.metric("From", inr(service.get("base_price", 0)))
-            with duration_col:
-                st.metric("Duration", f"{service.get('duration', 0)} min")
-            if st.button(
-                "Book now",
-                key=f"service_book_{service.get('_id')}",
-                icon=":material/calendar_month:",
-                width="stretch",
-            ):
-                st.session_state.booking_service = service.get("_id")
-                st.session_state.booking_result = None
+        with price_col:
+            st.markdown(f"**{inr(service.get('base_price', 0))}**")
+            st.caption(f"{service.get('duration', 0)} min")
+        st.caption(service.get("description", ""))
+        if st.button(
+            "Book now",
+            key=f"service_book_{service.get('_id')}",
+            icon=":material/calendar_month:",
+            type="primary",
+            width="stretch",
+        ):
+            st.session_state.booking_service = service.get("_id")
+            st.session_state.booking_result = None
+
+result = st.session_state.booking_result
+if result:
+    data = result.get("data", result)
+    with st.container(border=True):
+        st.success(f"Booking request sent - reference {data.get('booking_id')}")
+        st.json(data.get("pricing", {}))
+        if st.button("View my bookings", icon=":material/receipt_long:", width="stretch"):
+            st.switch_page("app_pages/my_bookings.py")
+    st.stop()
 
 booking_id = st.session_state.booking_service
 if not booking_id:
@@ -92,7 +105,7 @@ st.space("medium")
 st.header(f"Book {service.get('name')}", icon=":material/calendar_month:")
 
 if not st.session_state.token:
-    st.warning("Sign in from the sidebar to request this booking.")
+    st.warning("Tap the menu (top left) to sign in before requesting this booking.")
     st.stop()
 
 try:
@@ -107,15 +120,21 @@ if not providers:
 
 provider_names = {p["_id"]: p.get("user_name", "Provider") for p in providers}
 
+TIME_SLOTS = ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM", "05:00 PM", "07:00 PM"]
+
+days = [date.today() + timedelta(days=offset) for offset in range(7)]
+day_labels = [
+    f"TODAY {day.strftime('%d')}" if index == 0 else day.strftime("%a %d")
+    for index, day in enumerate(days)
+]
+chosen_day = choice_row("Choose a date", day_labels, [d.isoformat() for d in days], "booking_date")
+service_date = date.fromisoformat(chosen_day)
+service_time = choice_row("Time slot", TIME_SLOTS, TIME_SLOTS, "booking_time")
+
 with st.form("booking_form"):
-    provider_col, date_col = st.columns(2)
-    with provider_col:
-        chosen_provider = st.selectbox(
-            "Provider", list(provider_names), format_func=lambda pid: provider_names[pid]
-        )
-    with date_col:
-        service_date = st.date_input("Date", value=date.today())
-        service_time = st.text_input("Time", value="10:00 AM", placeholder="10:00 AM")
+    chosen_provider = st.selectbox(
+        "Provider", list(provider_names), format_func=lambda pid: provider_names[pid]
+    )
 
     address_col, city_col = st.columns([2, 1])
     with address_col:
@@ -160,12 +179,3 @@ if submitted:
         st.session_state.booking_result = booking
         st.session_state.booking_service = None
         st.rerun()
-
-result = st.session_state.booking_result
-if result:
-    data = result.get("data", result)
-    with st.container(border=True):
-        st.success(f"Booking request sent - reference {data.get('booking_id')}")
-        st.json(data.get("pricing", {}))
-        if st.button("View my bookings", icon=":material/receipt_long:", width="stretch"):
-            st.switch_page("app_pages/my_bookings.py")

@@ -8,7 +8,7 @@ from customer_utils.api import (
     fetch_reviews,
     fetch_services,
 )
-from customer_utils.ui import inr, stars
+from customer_utils.ui import avatar_tile, chip_row, inr, stars
 
 token = st.session_state.token
 
@@ -18,13 +18,12 @@ if "provider_profile" not in st.session_state:
 st.header("Find a provider", icon=":material/storefront:")
 st.caption("Search by location and compare the professionals available right now.")
 
-lat_col, lng_col, radius_col = st.columns([1, 1, 1])
+lat_col, lng_col = st.columns(2)
 with lat_col:
     latitude = st.number_input("Latitude", value=19.0760, format="%.4f")
 with lng_col:
     longitude = st.number_input("Longitude", value=72.8777, format="%.4f")
-with radius_col:
-    radius = st.slider("Search radius (km)", min_value=1, max_value=50, value=25)
+radius = st.slider("Search radius (km)", min_value=1, max_value=50, value=25)
 
 try:
     providers = fetch_providers(token, lat=latitude, lng=longitude, radius=radius)["data"]
@@ -41,29 +40,47 @@ if not providers:
 for provider in providers:
     provider_id = provider.get("_id")
     rating = provider.get("rating", {}) or {}
-    skills = provider.get("skills") or []
+    name = provider.get("user_name", "Provider")
+    average = rating.get("average", 0)
+    city = (provider.get("location") or {}).get("city") or "Near you"
 
     with st.container(border=True):
-        head, action = st.columns([3, 1], vertical_alignment="center")
-        with head:
-            st.markdown(f"#### :material/account_circle: {provider.get('user_name', 'Provider')}")
-            st.caption(
-                f"{stars(rating.get('average', 0))} {rating.get('average', 0)} "
-                f"from {rating.get('count', 0)} reviews · "
-                f"{provider.get('total_jobs', 0)} jobs done · "
-                f"{provider.get('experience_years', 0)} years experience"
+        avatar_col, info_col, price_col = st.columns(
+            [0.6, 3, 1], vertical_alignment="center"
+        )
+        with avatar_col:
+            st.html(avatar_tile(name))
+        with info_col:
+            st.markdown(f"#### {name} :green[✓]")
+            st.html(
+                chip_row(
+                    [
+                        f"★ {average} ({rating.get('count', 0)})",
+                        f"📍 {city}",
+                        f"🛠 {provider.get('experience_years', 0)} yrs experience",
+                        f"✓ {provider.get('total_jobs', 0)} jobs done",
+                    ]
+                )
             )
-            st.caption(f":material/payments: From {inr(provider.get('daily_wage', 0))} per day")
-            if skills:
-                st.caption("Skills: " + ", ".join(skills))
-        with action:
+        with price_col:
+            st.markdown(f"**{inr(provider.get('daily_wage', 0))}**")
+            st.caption("per day")
+
+        profile_col, book_col = st.columns(2)
+        with profile_col:
             if st.button(
                 "View profile",
                 key=f"profile_{provider_id}",
-                icon=":material/person:",
                 width="stretch",
             ):
                 st.session_state.provider_profile = provider_id
+        with book_col:
+            booked = st.button(
+                "Book now",
+                key=f"book_{provider_id}",
+                type="primary",
+                width="stretch",
+            )
 
         with st.expander("Reviews", icon=":material/reviews:"):
             try:
@@ -79,12 +96,7 @@ for provider in providers:
                     )
                     st.caption(str(review.get("created_at", ""))[:10])
 
-        if st.button(
-            "Book this provider",
-            key=f"book_{provider_id}",
-            icon=":material/calendar_month:",
-            width="stretch",
-        ):
+        if booked:
             try:
                 services = fetch_services(token)["data"]
             except ApiError:

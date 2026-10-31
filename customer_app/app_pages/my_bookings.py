@@ -13,7 +13,7 @@ from customer_utils.ui import inr, stars
 token = st.session_state.token
 
 if not token:
-    st.info("Sign in from the sidebar to see your bookings.")
+    st.info("Tap the menu (top left) to sign in and see your bookings.")
     st.stop()
 
 st.header("My bookings", icon=":material/receipt_long:")

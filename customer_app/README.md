@@ -52,7 +52,7 @@ From the repository root, with the API running on port 8000:
 ```
 
 The app is at http://localhost:8502. Sign in with the seeded customer account
-`9876543211` / `customer123`, or create a new account from the sidebar.
+`9876543211` / `customer123`, or create a new account from the menu (top left).
 
 ## Tests
 
