@@ -110,6 +110,7 @@ if not st.session_state.token:
 
 try:
     providers = fetch_providers(token, service_id=booking_id, radius=50)["data"]
+    preview = price_preview(token, booking_id)
 except ApiError as exc:
     st.error(str(exc))
     st.stop()
@@ -144,7 +145,6 @@ with st.form("booking_form"):
 
     issue = st.text_area("Describe the issue (optional)", placeholder="What needs to be done?")
 
-    preview = price_preview(service.get("base_price", 0))
     preview_col, submit_col = st.columns([2, 1], vertical_alignment="center")
     with preview_col:
         st.caption(

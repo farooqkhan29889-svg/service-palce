@@ -11,9 +11,6 @@ import streamlit as st
 DEFAULT_BASE_URL = "http://localhost:8000"
 TIMEOUT = 30
 
-PLATFORM_COMMISSION_RATE = 0.10
-GST_RATE = 0.18
-
 
 def secret(name, default=None):
     """Read a value from Streamlit secrets, falling back to a default."""
@@ -105,16 +102,17 @@ def verify_otp(phone, otp):
     return data.get("token"), data.get("user", {})
 
 
-def price_preview(service_charge):
-    """Mirror of the API's pricing calculation, for display only."""
-    platform_fee = round(service_charge * PLATFORM_COMMISSION_RATE)
-    gst = round(platform_fee * GST_RATE)
-    return {
-        "service_charge": service_charge,
-        "platform_fee": platform_fee,
-        "gst": gst,
-        "total_amount": service_charge + gst,
-    }
+@st.cache_data(ttl=60, show_spinner=False)
+def price_preview(token, service_id):
+    """Ask the API for the full price breakdown of a service.
+
+    The commission and GST rates live only on the server. Reading them here
+    would mean a second copy to keep in sync, so this just calls the endpoint.
+    """
+    payload = _request(
+        "GET", "/api/services/quote", params={"service_id": service_id}, token=token
+    )
+    return payload.get("data", {})
 
 
 @st.cache_data(ttl=60, show_spinner=False)

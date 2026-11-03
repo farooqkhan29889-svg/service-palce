@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.database import get_database, to_object_id
 from app.core.serialization import to_jsonable
 from app.core.dependencies import get_current_active_user, require_role
+from app.core.security import calculate_pricing
 from app.models.schemas import ServiceCreate, ServiceUpdate
 from app.core.time_utils import utcnow
 import re
@@ -73,6 +74,28 @@ async def get_categories():
     return {
         "success": True,
         "data": categories
+    }
+
+@router.get("/quote", response_model=dict)
+async def price_quote(service_id: str):
+    """Full price breakdown for a service.
+
+    The customer app shows this before booking. It is served here so the
+    commission and GST maths lives in exactly one place - clients must not
+    reimplement it with their own rates.
+    """
+    db = get_database()
+
+    service = await db.services.find_one({"_id": to_object_id(service_id)})
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Service not found"
+        )
+
+    return {
+        "success": True,
+        "data": calculate_pricing(service["base_price"])
     }
 
 @router.get("/{service_id}", response_model=dict)
